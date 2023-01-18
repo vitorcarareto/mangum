@@ -79,7 +79,7 @@ class AbstractHandler(metaclass=ABCMeta):
             "requestContext" in trigger_event
             and "connectionId" in trigger_event["requestContext"]
         ):
-            from . import AwsWsGateway
+            from mangum.handlers.aws_ws_gateway import AwsWsGateway
 
             return AwsWsGateway(trigger_event, trigger_context)
 
