@@ -141,6 +141,7 @@ def test_aws_cf_lambda_at_edge_scope_basic():
         "asgi": {"version": "3.0"},
         "aws.context": {},
         "aws.event": example_event,
+        "aws.eventType": "AWS_CF_LAMBDA_AT_EDGE",
         "client": ("203.0.113.178", 0),
         "headers": [
             [b"x-forwarded-for", b"203.0.113.178"],
@@ -229,6 +230,7 @@ def test_aws_api_gateway_scope_real(
         "asgi": {"version": "3.0"},
         "aws.context": {},
         "aws.event": event,
+        "aws.eventType": "AWS_CF_LAMBDA_AT_EDGE",
         "client": ("192.168.100.1", 0),
         "headers": [
             [b"accept-encoding", b"gzip,deflate"],
@@ -273,6 +275,7 @@ def test_aws_lambda_at_edge_response(
     method, content_type, raw_res_body, res_body, res_base64_encoded
 ):
     async def app(scope, receive, send):
+        assert scope["aws.eventType"] == "AWS_CF_LAMBDA_AT_EDGE"
         await send(
             {
                 "type": "http.response.start",

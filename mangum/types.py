@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import (
     List,
     Tuple,
@@ -120,14 +120,17 @@ class BaseRequest:
     # Invocation event
     trigger_event: Dict[str, Any]
     trigger_context: Union["LambdaContext", Dict[str, Any]]
+    event_type: str
 
+    http_version: str = "1.1"
     raw_path: Optional[str] = None
     root_path: str = ""
+    asgi: Dict[str, str] = field(default_factory=lambda: {"version": "3.0"})
 
     @property
     def scope(self) -> Scope:
         return {
-            "http_version": "1.1",
+            "http_version": self.http_version,
             "headers": self.headers,
             "path": self.path,
             "raw_path": self.raw_path,
@@ -136,9 +139,11 @@ class BaseRequest:
             "query_string": self.query_string,
             "server": self.server,
             "client": self.client,
-            "asgi": {"version": "3.0"},
+            "asgi": self.asgi,
+            # Meta data to pass along to the application in case they need it
             "aws.event": self.trigger_event,
             "aws.context": self.trigger_context,
+            "aws.eventType": self.event_type,
         }
 
 
@@ -157,6 +162,24 @@ class Request(BaseRequest):
     def scope(self) -> Scope:
         scope = super().scope
         scope.update({"type": self.type, "method": self.method})
+        return scope
+
+
+@dataclass
+class WsRequest(BaseRequest):
+    """
+    A holder for an ASGI scope. Specific for usage with WebSocket connections.
+
+    https://asgi.readthedocs.io/en/latest/specs/www.html#websocket-connection-scope
+    """
+
+    type: str = "websocket"
+    subprotocols: List[str] = field(default_factory=lambda: [])
+
+    @property
+    def scope(self) -> Scope:
+        scope = super().scope
+        scope.update({"type": self.type, "subprotocols": self.subprotocols})
         return scope
 
 

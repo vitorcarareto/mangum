@@ -2,7 +2,7 @@ import base64
 from abc import ABCMeta, abstractmethod
 from typing import Dict, Any, Tuple, List
 
-from mangum.types import Response, Request, LambdaEvent, LambdaContext
+from mangum.types import Response, Request, WsRequest, LambdaEvent, LambdaContext
 
 
 class AbstractHandler(metaclass=ABCMeta):
@@ -16,7 +16,7 @@ class AbstractHandler(metaclass=ABCMeta):
 
     @property
     @abstractmethod
-    def request(self) -> Request:
+    def request(self) -> Union[Request, WsRequest]:
         """
         Parse an ASGI scope from the request event
         """
@@ -34,6 +34,25 @@ class AbstractHandler(metaclass=ABCMeta):
         After running our application, transform the response to the correct format for
         this handler
         """
+
+    @property
+    def message_type(self) -> str:
+        request_context = self.trigger_event["requestContext"]
+        return request_context["eventType"]
+
+    @property
+    def connection_id(self) -> str:
+        request_context = self.trigger_event["requestContext"]
+        return request_context["connectionId"]
+
+    @property
+    def api_gateway_endpoint_url(self) -> str:
+        request_context = self.trigger_event["requestContext"]
+        domain = request_context["domainName"]
+        stage = request_context["stage"]
+        api_gateway_endpoint_url = f"https://{domain}/{stage}/@connections"
+
+        return api_gateway_endpoint_url
 
     @staticmethod
     def from_trigger(
@@ -55,6 +74,15 @@ class AbstractHandler(metaclass=ABCMeta):
             from mangum.handlers.aws_alb import AwsAlb
 
             return AwsAlb(trigger_event, trigger_context)
+
+        if (
+            "requestContext" in trigger_event
+            and "connectionId" in trigger_event["requestContext"]
+        ):
+            from . import AwsWsGateway
+
+            return AwsWsGateway(trigger_event, trigger_context)
+
         if (
             "Records" in trigger_event
             and len(trigger_event["Records"]) > 0

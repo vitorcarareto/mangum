@@ -201,6 +201,7 @@ def test_aws_http_gateway_scope_basic_v1():
         "asgi": {"version": "3.0"},
         "aws.context": {},
         "aws.event": example_event,
+        "aws.eventType": "AWS_HTTP_GATEWAY",
         "client": ("IP", 0),
         "headers": [[b"header1", b"value1"], [b"header2", b"value1, value2"]],
         "http_version": "1.1",
@@ -304,6 +305,7 @@ def test_aws_http_gateway_scope_basic_v2():
         "asgi": {"version": "3.0"},
         "aws.context": {},
         "aws.event": example_event,
+        "aws.eventType": "AWS_HTTP_GATEWAY",
         "client": ("IP", 0),
         "headers": [
             [b"header1", b"value1"],
@@ -379,6 +381,7 @@ def test_aws_http_gateway_scope_real_v1(
         "asgi": {"version": "3.0"},
         "aws.context": {},
         "aws.event": event,
+        "aws.eventType": "AWS_HTTP_GATEWAY",
         "client": ("192.168.100.1", 0),
         "headers": [
             [b"accept-encoding", b"gzip, deflate"],
@@ -445,6 +448,7 @@ def test_aws_http_gateway_scope_real_v2(
         "asgi": {"version": "3.0"},
         "aws.context": {},
         "aws.event": event,
+        "aws.eventType": "AWS_HTTP_GATEWAY",
         "client": ("192.168.100.1", 0),
         "headers": [
             [b"accept-encoding", b"gzip,deflate"],
@@ -508,6 +512,7 @@ def test_aws_http_gateway_response_v1(
     """
 
     async def app(scope, receive, send):
+        assert scope["aws.eventType"] == "AWS_HTTP_GATEWAY"
         headers = []
         if content_type is not None:
             headers.append([b"content-type", content_type])
@@ -574,6 +579,7 @@ def test_aws_http_gateway_response_v2(
     method, content_type, raw_res_body, res_body, res_base64_encoded
 ):
     async def app(scope, receive, send):
+        assert scope["aws.eventType"] == "AWS_HTTP_GATEWAY"
         headers = []
         if content_type is not None:
             headers.append([b"content-type", content_type])
